@@ -9,7 +9,19 @@ using ProductsAPI.Context;
 using ProductsAPI.Models;
 using System.Text;
 
+var MyAllowSpecificOrigins = "_myAllowSpecificOrigins";
+
 var builder = WebApplication.CreateBuilder(args);
+
+builder.Services.AddCors(options =>
+{
+	options.AddPolicy(MyAllowSpecificOrigins, policy =>
+	{
+		policy.WithOrigins("http://127.0.0.1:5500")
+		.AllowAnyHeader()
+		.AllowAnyMethod();
+	});
+});
 
 // Add services to the container.
 
@@ -49,15 +61,21 @@ builder.Services.AddAuthentication(x =>
 		ValidIssuer = "sevvalyldrm.com",
 		ValidateAudience = false,
 		ValidAudiences= new string[] { "a" , "b"},
+
+		//validate edildi, kullanýlacak key verildi
 		ValidateIssuerSigningKey = true,
 		IssuerSigningKey =  new SymmetricSecurityKey(Encoding.ASCII.GetBytes(
 			builder.Configuration.GetSection("AppSettings:Secret").Value ?? "")),
+
+		//token'ýn sona erme süresi
 		ValidateLifetime = true,
 	};
 });
 builder.Services.AddControllers();
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
+
+//swagger üzerine auth butonu eklendi
 builder.Services.AddSwaggerGen(option =>
 {
 	option.SwaggerDoc("v1", new OpenApiInfo { Title = "Demo API", Version = "v1" });
@@ -96,7 +114,11 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+
 app.UseAuthentication();
+app.UseRouting();
+
+app.UseCors(MyAllowSpecificOrigins);
 app.UseAuthorization();
 
 app.MapControllers();
